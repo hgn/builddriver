@@ -1,21 +1,17 @@
 import os
-import tempfile
-import shutil
-import textwrap
-import string
-import random
+import sys
 
 from unittest import TestCase
 
 import gccoutputparser
 
 
-
-URL = "http://localhost:8080/"
-TIMEOUT = 10
-
-
 class TestGccOutputParser(TestCase):
 
     def test_is_initiable(self):
-        pass
+        e = gccoutputparser.GccOutputParser()
+
+    def test_single_line(self):
+        msg = 'queue.c:34:6: error: unused variable ‘foo’ [-Werror=unused-variable]'
+        e = gccoutputparser.GccOutputParser()
+        e.feed(msg)

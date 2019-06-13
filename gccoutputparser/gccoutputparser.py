@@ -1,23 +1,24 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import json
-import pprint
-import base64
 import re
 import os
 import sys
-import datetime
-import mimetypes
-import getpass
-import textwrap
+
+RE_MAIN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')
 
 class GccOutputParser(object):
 
     def __init__(self):
         pass
 
+    def feed(self, lines):
+        for line in lines.splitlines():
+            m = RE_MAIN.match(line)
+            if m:
+                print(m.group(), file=sys.stderr)
+
+
+
 if __name__ == "__main__":
-    c = MajorEntity('ddd')
-    sys.stderr.write("Python client library to interact with Hippo2D\n")
     sys.stderr.write("Please import this file and use provided function\n")
