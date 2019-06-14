@@ -20,6 +20,19 @@ class TestSimple(TestCase):
         e = gccoutputparser.GccOutputParser()
         e.feed(msg)
 
+    def test_single_line_parsed_lines(self):
+        msg = 'queue.c:34:6: error: unused variable ‘foo’ [-Werror=unused-variable]'
+        e = gccoutputparser.GccOutputParser()
+        e.feed(msg)
+        assert(e.parsed_lines() == 1)
+
+    def test_multi_line(self):
+        msg =  'queue.c:34:6: error: unused variable ‘foo’ [-Werror=unused-variable]\n'
+        msg += 'queue.c:34:6: error: unused variable ‘foo’ [-Werror=unused-variable]'
+        e = gccoutputparser.GccOutputParser()
+        e.feed(msg)
+        assert(e.parsed_lines() == 2)
+
     def test_single_line_2(self):
         kwargs = { "trace_unmatched": True }
         e = gccoutputparser.GccOutputParser(**kwargs)

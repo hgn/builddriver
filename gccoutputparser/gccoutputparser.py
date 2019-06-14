@@ -13,6 +13,7 @@ RE_GCC_WITHOUT_COLUMN = re.compile('^(.*):(\\d+):.*?(warning|error):(.*)$')
 class GccOutputParser(object):
 
     def __init__(self, val2="default value", **kwargs):
+        self._parsed_lines = 0
         self._trace_unmatched = kwargs.get('trace_unmatched', False)
         self._trace_unmatched_db = list()
         self._trace_unmatched_no = 0
@@ -37,15 +38,21 @@ class GccOutputParser(object):
     def unmatched_no(self):
         return self._trace_unmatched_no
 
+    def parsed_lines(self):
+        return self._parsed_lines
 
     def feed(self, lines):
         for line in lines.splitlines():
+            line = line.rstrip()
+            self._parsed_lines += 1
             m = RE_GCC_WITH_COLUMN.match(line)
             if m:
-                return self._process_gcc_with_column(m)
+                self._process_gcc_with_column(m)
+                continue
             m = RE_GCC_WITHOUT_COLUMN.match(line)
             if m:
-                return self._process_gcc_without_column(m)
+                self._process_gcc_without_column(m)
+                continue
             # trace unmachted, if enabled
             self._process_trace_unmachted(line)
 
