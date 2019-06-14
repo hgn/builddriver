@@ -48,4 +48,24 @@ class TestTraceUnmatched(TestCase):
         e.feed(msg)
         assert(e.unmatched() == None)
 
+    def test_trace_unmatched_no(self):
+        kwargs = { "trace_unmatched": True }
+        e = gccoutputparser.GccOutputParser(**kwargs)
+        msg = 'this line is not supported and not valid - thus trace'
+        e.feed(msg)
+        assert(e.unmatched_no() == 1)
 
+    def test_trace_unmatched_no_2(self):
+        kwargs = { "trace_unmatched": True }
+        e = gccoutputparser.GccOutputParser(**kwargs)
+        msg = 'this line is not supported and not valid - thus trace'
+        e.feed(msg)
+        msg = 'this line is not supported and not valid - thus trace'
+        e.feed(msg)
+        assert(e.unmatched_no() == 2)
+
+    def test_trace_unmatched_no_disabled(self):
+        e = gccoutputparser.GccOutputParser()
+        msg = 'this line is not supported and not valid - thus trace'
+        e.feed(msg)
+        assert(e.unmatched_no() == 1)

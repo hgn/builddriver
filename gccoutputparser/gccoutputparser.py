@@ -15,6 +15,7 @@ class GccOutputParser(object):
     def __init__(self, val2="default value", **kwargs):
         self._trace_unmatched = kwargs.get('trace_unmatched', False)
         self._trace_unmatched_db = list()
+        self._trace_unmatched_no = 0
 
     def _process_gcc_with_column(self, m):
         pass
@@ -23,6 +24,7 @@ class GccOutputParser(object):
         pass
 
     def _process_trace_unmachted(self, line):
+        self._trace_unmatched_no += 1
         if not self._trace_unmatched:
             return
         self._trace_unmatched_db.append(line)
@@ -31,6 +33,9 @@ class GccOutputParser(object):
         if not self._trace_unmatched:
             return None
         return self._trace_unmatched_db
+
+    def unmatched_no(self):
+        return self._trace_unmatched_no
 
 
     def feed(self, lines):
