@@ -19,13 +19,14 @@ class Entry:
     file: str
     lineno: int
     severity: str
+    message: str
     column: int = None
 
 
 
 class GccOutputParser:
 
-    def __init__(self, val2="default value", **kwargs):
+    def __init__(self, **kwargs):
         self._parsed_lines = 0
         self._warnings_no = 0
         self._errors_no = 0
@@ -68,14 +69,16 @@ class GccOutputParser:
         lineno = m.group(2)
         column = m.group(3)
         severity = self.error_warning_selector(m.group(4))
-        e = Entry(file_, lineno, severity, column)
+        message = m.group(5)
+        e = Entry(file_, lineno, severity, column, message)
         self._process_new_entry(e)
 
     def _process_gcc_without_column(self, m):
         file_ = m.group(1).strip()
         lineno = m.group(2)
         severity = self.error_warning_selector(m.group(3))
-        e = Entry(file_, lineno, severity)
+        message = m.group(4)
+        e = Entry(file_, lineno, severity, message)
         self._process_new_entry(e)
 
     def _process_trace_unmachted(self, line):
