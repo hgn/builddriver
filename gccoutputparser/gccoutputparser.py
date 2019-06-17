@@ -103,7 +103,7 @@ class GccOutputParser:
         internal reording is done
         '''
         for error in self._db_errors:
-            if path_filter and path_filter not in warning.path:
+            if path_filter and path_filter not in error.path:
                 continue
             yield error
 
@@ -136,22 +136,22 @@ class GccOutputParser:
         #sys.stderr.write(str(entry))
         #sys.stderr.write('\n')
 
-    def _process_gcc_with_column(self, m):
-        file_ = m.group(1).strip()
-        lineno = m.group(2)
-        column = m.group(3)
-        severity = self._error_warning_selector(m.group(4))
-        message = m.group(5)
-        e = Entry(file_, lineno, severity, column, message)
-        self._process_new_entry(e)
+    def _process_gcc_with_column(self, regex_match):
+        file_ = regex_match.group(1).strip()
+        lineno = regex_match.group(2)
+        column = regex_match.group(3)
+        severity = self._error_warning_selector(regex_match.group(4))
+        message = regex_match.group(5)
+        entry = Entry(file_, lineno, severity, column, message)
+        self._process_new_entry(entry)
 
-    def _process_gcc_without_column(self, m):
-        file_ = m.group(1).strip()
-        lineno = m.group(2)
-        severity = self._error_warning_selector(m.group(3))
-        message = m.group(4)
-        e = Entry(file_, lineno, severity, message)
-        self._process_new_entry(e)
+    def _process_gcc_without_column(self, regex_match):
+        file_ = regex_match.group(1).strip()
+        lineno = regex_match.group(2)
+        severity = self._error_warning_selector(regex_match.group(3))
+        message = regex_match.group(4)
+        entry = Entry(file_, lineno, severity, message)
+        self._process_new_entry(entry)
 
     def _process_trace_unmachted(self, line):
         self._trace_unmatched_no += 1
