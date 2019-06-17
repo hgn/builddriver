@@ -7,6 +7,8 @@ import gccoutputparser
 
 ERROR_VALID = 'queue.c:34:6: error: unused variable ‘foo’ [-Werror=unused-variable]'
 WARNING_VALID = 'queue.c:34:6: warning: unused variable ‘foo’ [-Werror=unused-variable]'
+WARNING_VALID_PATH_FULL_FOO_ABS = '/home/foo/src/queue.c:34:6: warning: unused variable ‘foo’'
+WARNING_VALID_PATH_FULL_FOO_REL = '../foo/src/queue.c:34:6: warning: unused variable ‘foo’'
 
 
 class TestInit(TestCase):
@@ -140,3 +142,25 @@ class TestGenerator(TestCase):
         e.record(ERROR_VALID)
         e.record(ERROR_VALID)
         assert(len(list(e.errors())) == 2)
+
+
+class TestPathFiler(TestCase):
+
+    def test_generator_path_filer_abs(self):
+        e = gccoutputparser.GccOutputParser()
+        e.record(WARNING_VALID_PATH_FULL_FOO_ABS)
+        e.record(WARNING_VALID_PATH_FULL_FOO_REL)
+        i = 0
+        for warning in e.warnings(path_filter='/home/foo/src'):
+            i += 1
+        assert(i == 1)
+
+    def test_generator_path_filer_rel(self):
+        e = gccoutputparser.GccOutputParser()
+        e.record(WARNING_VALID_PATH_FULL_FOO_ABS)
+        e.record(WARNING_VALID_PATH_FULL_FOO_REL)
+        i = 0
+        for warning in e.warnings(path_filter='foo/src'):
+            i += 1
+        assert(i == 2)
+

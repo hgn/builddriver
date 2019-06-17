@@ -16,7 +16,7 @@ class Entry:
     Holds information about ONE gcc warning/error in
     an unified fashion - no matter if gcc/clang or version
     '''
-    file: str
+    path: str
     lineno: int
     severity: str
     message: str
@@ -119,14 +119,18 @@ class GccOutputParser:
     def errors_no(self):
         return self._errors_no
 
-    def warnings(self):
+    def warnings(self, path_filter=None):
         ''' just an warning generator'''
         for warning in self._db_warnings:
+            if path_filter and path_filter not in warning.path:
+                continue
             yield warning
 
-    def errors(self):
+    def errors(self, path_filter=None):
         ''' just an error generator'''
         for error in self._db_errors:
+            if path_filter and path_filter not in warning.path:
+                continue
             yield error
 
     # just an alias, call what you want
