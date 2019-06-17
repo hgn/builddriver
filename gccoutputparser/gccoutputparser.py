@@ -38,55 +38,6 @@ class GccOutputParser:
         self._trace_unmatched_db = list()
         self._trace_unmatched_no = 0
 
-    @staticmethod
-    def error_warning_selector(string):
-        if 'error' in string:
-            return 'error'
-        if 'warning' in string:
-            return 'warning'
-        return 'unknown'
-
-    def _account_severity(self, entry):
-        if entry.severity == 'warning':
-            self._warnings_no += 1
-        elif entry.severity == 'error':
-            self._errors_no += 1
-        else:
-            self._unknown_no += 1
-
-    def _process_new_entry(self, entry):
-        if entry.severity == 'warning':
-            self._db_warnings.append(entry)
-        if entry.severity == 'error':
-            self._db_errors.append(entry)
-        self._account_severity(entry)
-        #sys.stderr.write('\n')
-        #sys.stderr.write(str(entry))
-        #sys.stderr.write('\n')
-
-    def _process_gcc_with_column(self, m):
-        file_ = m.group(1).strip()
-        lineno = m.group(2)
-        column = m.group(3)
-        severity = self.error_warning_selector(m.group(4))
-        message = m.group(5)
-        e = Entry(file_, lineno, severity, column, message)
-        self._process_new_entry(e)
-
-    def _process_gcc_without_column(self, m):
-        file_ = m.group(1).strip()
-        lineno = m.group(2)
-        severity = self.error_warning_selector(m.group(3))
-        message = m.group(4)
-        e = Entry(file_, lineno, severity, message)
-        self._process_new_entry(e)
-
-    def _process_trace_unmachted(self, line):
-        self._trace_unmatched_no += 1
-        if not self._trace_unmatched:
-            return
-        self._trace_unmatched_db.append(line)
-
     def unmatched(self):
         if not self._trace_unmatched:
             return None
@@ -120,14 +71,24 @@ class GccOutputParser:
         return self._errors_no
 
     def warnings(self, path_filter=None):
-        ''' just an warning generator'''
+        '''
+        Just an warning generator
+
+        The ordering is the inserted order, no
+        internal reording is done
+        '''
         for warning in self._db_warnings:
             if path_filter and path_filter not in warning.path:
                 continue
             yield warning
 
     def errors(self, path_filter=None):
-        ''' just an error generator'''
+        '''
+        Just an error generator
+
+        The ordering is the inserted order, no
+        internal reording is done
+        '''
         for error in self._db_errors:
             if path_filter and path_filter not in warning.path:
                 continue
@@ -135,6 +96,55 @@ class GccOutputParser:
 
     # just an alias, call what you want
     feed = record
+
+    @staticmethod
+    def _error_warning_selector(string):
+        if 'error' in string:
+            return 'error'
+        if 'warning' in string:
+            return 'warning'
+        return 'unknown'
+
+    def _account_severity(self, entry):
+        if entry.severity == 'warning':
+            self._warnings_no += 1
+        elif entry.severity == 'error':
+            self._errors_no += 1
+        else:
+            self._unknown_no += 1
+
+    def _process_new_entry(self, entry):
+        if entry.severity == 'warning':
+            self._db_warnings.append(entry)
+        if entry.severity == 'error':
+            self._db_errors.append(entry)
+        self._account_severity(entry)
+        #sys.stderr.write('\n')
+        #sys.stderr.write(str(entry))
+        #sys.stderr.write('\n')
+
+    def _process_gcc_with_column(self, m):
+        file_ = m.group(1).strip()
+        lineno = m.group(2)
+        column = m.group(3)
+        severity = self._error_warning_selector(m.group(4))
+        message = m.group(5)
+        e = Entry(file_, lineno, severity, column, message)
+        self._process_new_entry(e)
+
+    def _process_gcc_without_column(self, m):
+        file_ = m.group(1).strip()
+        lineno = m.group(2)
+        severity = self._error_warning_selector(m.group(3))
+        message = m.group(4)
+        e = Entry(file_, lineno, severity, message)
+        self._process_new_entry(e)
+
+    def _process_trace_unmachted(self, line):
+        self._trace_unmatched_no += 1
+        if not self._trace_unmatched:
+            return
+        self._trace_unmatched_db.append(line)
 
 
 
