@@ -6,6 +6,9 @@ install:
 test:
 	python3 setup.py test
 
+lint:
+	pylint3 --disable=too-many-instance-attributes gccoutputparser/gccoutputparser.py
+
 setup:
 	python3 setup.py sdist
 	python3 setup.py bdist_wheel --universal
