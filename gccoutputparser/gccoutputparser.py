@@ -119,6 +119,16 @@ class GccOutputParser:
     def errors_no(self):
         return self._errors_no
 
+    def warnings(self):
+        ''' just an warning generator'''
+        for warning in self._db_warnings:
+            yield warning
+
+    def errors(self):
+        ''' just an error generator'''
+        for error in self._db_errors:
+            yield error
+
     # just an alias, call what you want
     feed = record
 

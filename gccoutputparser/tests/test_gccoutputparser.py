@@ -5,6 +5,9 @@ from unittest import TestCase
 
 import gccoutputparser
 
+ERROR_VALID = 'queue.c:34:6: error: unused variable ‘foo’ [-Werror=unused-variable]'
+WARNING_VALID = 'queue.c:34:6: warning: unused variable ‘foo’ [-Werror=unused-variable]'
+
 
 class TestInit(TestCase):
 
@@ -99,3 +102,41 @@ class TestNumberAccounting(TestCase):
         e.record(msg)
         assert(e.warnings_no() == 0)
         assert(e.errors_no() == 1)
+
+
+class TestGenerator(TestCase):
+
+    def test_generator_warning(self):
+        e = gccoutputparser.GccOutputParser()
+        e.record(WARNING_VALID)
+        e.record(WARNING_VALID)
+        i = 0
+        for warning in e.warnings():
+            i += 1
+        assert(i == 2)
+
+    def test_generator_error(self):
+        e = gccoutputparser.GccOutputParser()
+        e.record(ERROR_VALID)
+        e.record(ERROR_VALID)
+        i = 0
+        for erros in e.errors():
+            i += 1
+        assert(i == 2)
+        # no warnings here
+        i = 0
+        for warning in e.warnings():
+            i += 1
+        assert(i == 0)
+
+    def test_generator_warning_convert(self):
+        e = gccoutputparser.GccOutputParser()
+        e.record(WARNING_VALID)
+        e.record(WARNING_VALID)
+        assert(len(list(e.warnings())) == 2)
+
+    def test_generator_errots_convert(self):
+        e = gccoutputparser.GccOutputParser()
+        e.record(ERROR_VALID)
+        e.record(ERROR_VALID)
+        assert(len(list(e.errors())) == 2)
