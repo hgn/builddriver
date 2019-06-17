@@ -30,7 +30,8 @@ class GccOutputParser:
         self._warnings_no = 0
         self._errors_no = 0
         self._unknown_no = 0
-        self._db = list()
+        self._db_warnings = list()
+        self._db_errors = list()
         # optional tracing
         self._trace_unmatched = kwargs.get('trace_unmatched', False)
         self._trace_unmatched_db = list()
@@ -47,13 +48,17 @@ class GccOutputParser:
     def _account_severity(self, entry):
         if entry.severity == 'warning':
             self._warnings_no += 1
-        elif entry.severity == 'errors':
-            self._warnings_no += 1
+        elif entry.severity == 'error':
+            self._errors_no += 1
         else:
             self._unknown_no += 1
 
     def _process_new_entry(self, entry):
-        self._db.append(entry)
+        if entry.severity == 'warning':
+            self._db_warnings.append(entry)
+        if entry.severity == 'error':
+            self._db_errors.append(entry)
+        self._account_severity(entry)
         #sys.stderr.write('\n')
         #sys.stderr.write(str(entry))
         #sys.stderr.write('\n')

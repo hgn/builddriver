@@ -82,3 +82,20 @@ class TestTraceUnmatched(TestCase):
         msg = 'this line is not supported and not valid - thus trace'
         e.feed(msg)
         assert(e.unmatched_no() == 1)
+
+
+class TestNumberAccounting(TestCase):
+
+    def test_zero_warnings(self):
+        e = gccoutputparser.GccOutputParser()
+        msg = 'this line is not supported and not valid - thus trace'
+        e.record(msg)
+        assert(e.warnings_no() == 0)
+        assert(e.errors_no() == 0)
+
+    def test_error(self):
+        e = gccoutputparser.GccOutputParser()
+        msg = 'queue.c:34:6: error: unused variable ‘foo’ [-Werror=unused-variable]'
+        e.record(msg)
+        assert(e.warnings_no() == 0)
+        assert(e.errors_no() == 1)
