@@ -27,6 +27,9 @@ class GccOutputParser:
 
     def __init__(self, val2="default value", **kwargs):
         self._parsed_lines = 0
+        self._warnings_no = 0
+        self._errors_no = 0
+        self._unknown_no = 0
         self._db = list()
         # optional tracing
         self._trace_unmatched = kwargs.get('trace_unmatched', False)
@@ -41,14 +44,22 @@ class GccOutputParser:
             return 'warning'
         return 'unknown'
 
+    def _account_severity(self, entry):
+        if entry.severity == 'warning':
+            self._warnings_no += 1
+        elif entry.severity == 'errors':
+            self._warnings_no += 1
+        else:
+            self._unknown_no += 1
+
     def _process_new_entry(self, entry):
         self._db.append(entry)
-        sys.stderr.write('\n')
-        sys.stderr.write(str(entry))
-        sys.stderr.write('\n')
+        #sys.stderr.write('\n')
+        #sys.stderr.write(str(entry))
+        #sys.stderr.write('\n')
 
     def _process_gcc_with_column(self, m):
-        file_ = m.group(1)
+        file_ = m.group(1).strip()
         lineno = m.group(2)
         column = m.group(3)
         severity = self.error_warning_selector(m.group(4))
@@ -56,7 +67,7 @@ class GccOutputParser:
         self._process_new_entry(e)
 
     def _process_gcc_without_column(self, m):
-        file_ = m.group(1)
+        file_ = m.group(1).strip()
         lineno = m.group(2)
         severity = self.error_warning_selector(m.group(3))
         e = Entry(file_, lineno, severity)
@@ -93,6 +104,12 @@ class GccOutputParser:
                 continue
             # trace unmachted, if enabled
             self._process_trace_unmachted(line)
+
+    def warnings_no(self):
+        return self._warnings_no
+
+    def errors_no(self):
+        return self._errors_no
 
     # just an alias, call what you want
     feed = record
