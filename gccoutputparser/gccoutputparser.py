@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import re
-import os
 import sys
 from dataclasses import dataclass
+from typing import Iterator
+from typing import List
+from typing import Optional
+
 
 
 RE_GCC_WITH_COLUMN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')
@@ -26,7 +29,7 @@ class Entry:
 
 class GccOutputParser:
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: str) -> None:
         self._parsed_lines = 0
         self._warnings_no = 0
         self._errors_no = 0
@@ -38,18 +41,28 @@ class GccOutputParser:
         self._trace_unmatched_db = list()
         self._trace_unmatched_no = 0
 
-    def unmatched(self):
+    def unmatched(self) -> List[str]:
+        """
+        Return a list of all unmatched lines where
+        the regex did not found any gcc/clang compatible
+        lines. This can be used for debugging purpuse.
+        Note that because of memory constraints this is
+        disabled by default. To enable it
+
+        kwargs = { "trace_unmatched": True }
+        e = gccoutputparser.GccOutputParser(**kwargs)
+        """
         if not self._trace_unmatched:
             return None
         return self._trace_unmatched_db
 
-    def unmatched_no(self):
+    def unmatched_no(self) -> int:
         return self._trace_unmatched_no
 
-    def parsed_lines(self):
+    def parsed_lines(self) -> int:
         return self._parsed_lines
 
-    def record(self, lines):
+    def record(self, lines: str):
         for line in lines.splitlines():
             line = line.rstrip()
             self._parsed_lines += 1
@@ -64,13 +77,13 @@ class GccOutputParser:
             # trace unmachted, if enabled
             self._process_trace_unmachted(line)
 
-    def warnings_no(self):
+    def warnings_no(self) -> int:
         return self._warnings_no
 
-    def errors_no(self):
+    def errors_no(self) -> int:
         return self._errors_no
 
-    def warnings(self, path_filter=None):
+    def warnings(self, path_filter: Optional[str] = None) -> Iterator[Entry]:
         '''
         Just an warning generator
 
@@ -82,7 +95,7 @@ class GccOutputParser:
                 continue
             yield warning
 
-    def errors(self, path_filter=None):
+    def errors(self, path_filter: Optional[str] = None) -> Iterator[Entry]:
         '''
         Just an error generator
 
