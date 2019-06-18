@@ -3,6 +3,8 @@
 
 import re
 import sys
+import types
+
 from dataclasses import dataclass
 from typing import Iterator
 from typing import List
@@ -37,9 +39,10 @@ class GccOutputParser:
         self._db_warnings = list()
         self._db_errors = list()
         # optional tracing
-        self._trace_unmatched = kwargs.get('trace_unmatched', False)
-        self._trace_unmatched_db = list()
-        self._trace_unmatched_no = 0
+        self._trace_unmatched = types.SimpleNamespace()
+        self._trace_unmatched.enabled = kwargs.get('trace_unmatched', False)
+        self._trace_unmatched.db = list()
+        self._trace_unmatched.no = 0
 
     def unmatched(self) -> List[str]:
         """
@@ -52,12 +55,12 @@ class GccOutputParser:
         kwargs = { "trace_unmatched": True }
         e = gccoutputparser.GccOutputParser(**kwargs)
         """
-        if not self._trace_unmatched:
+        if not self._trace_unmatched.enabled:
             return None
-        return self._trace_unmatched_db
+        return self._trace_unmatched.db
 
     def unmatched_no(self) -> int:
-        return self._trace_unmatched_no
+        return self._trace_unmatched.no
 
     def parsed_lines(self) -> int:
         return self._parsed_lines
@@ -154,10 +157,10 @@ class GccOutputParser:
         self._process_new_entry(entry)
 
     def _process_trace_unmachted(self, line):
-        self._trace_unmatched_no += 1
-        if not self._trace_unmatched:
+        self._trace_unmatched.no += 1
+        if not self._trace_unmatched.enabled:
             return
-        self._trace_unmatched_db.append(line)
+        self._trace_unmatched.db.append(line)
 
 
 
