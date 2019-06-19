@@ -4,10 +4,10 @@ install:
 	pip3 install -e . --no-deps
 
 test:
-	python3 setup.py test
+	python3 -m unittest builddriver/tests/tests.py
 
 lint:
-	pylint3 --disable=too-many-instance-attributes gccoutputparser/gccoutputparser.py
+	pylint3 --disable=too-many-instance-attributes builddriver/builddriver.py
 
 setup:
 	python3 setup.py sdist
@@ -19,5 +19,5 @@ upload: setup
 bootstrap:
 	python3 -m pip install --user --upgrade setuptools wheel twine
 
-clean:
+really-clean:
 	git clean -fdx

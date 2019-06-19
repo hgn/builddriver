@@ -1,14 +1,110 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import os
 import re
 import sys
+import glob
 import types
+import subprocess
+import tempfile
 
 from dataclasses import dataclass
 from typing import Iterator
 from typing import List
 from typing import Optional
+
+LOG_PREFIX = 'build-'
+LOG_SUFFIX = '.log'
+
+
+class ExecutionHandle:
+
+    def __init__(self, returncode, tf):
+        self._returncode = returncode
+        self._tf = tf
+        self._parsed = False
+        self._gccoutputparser = GccOutputParser()
+
+    def returncode(self):
+        return self._returncode
+
+    def tmp_name(self):
+        return self._tf.name
+
+    def _parse(self):
+        # on demand parsing function, can be
+        # called several times, but only the first
+        # time the actual parsing take place
+        if self._parsed:
+            return
+        with open(self._tf.name) as fd:
+            for line in fd:
+                self._gccoutputparser.record(line)
+        self._parsed = True
+
+    def errors(self):
+        self._parse()
+        return self._gccoutputparser.errors()
+
+    def errors_no(self):
+        self._parse()
+        return self._gccoutputparser.errors_no()
+
+    def warnings(self):
+        self._parse()
+        return self._gccoutputparser.warnings()
+
+    def warnings_no(self):
+        self._parse()
+        return self._gccoutputparser.warnings_no()
+
+
+
+def _transport_execution_handle(completed_process, tf):
+    r = ExecutionHandle(
+            completed_process.returncode,
+            tf)
+    return r
+
+def _redirect_prepare_fds():
+    tf = tempfile.NamedTemporaryFile(mode='wt', delete=False,
+                                     suffix=LOG_SUFFIX, prefix=LOG_PREFIX)
+    return tf
+
+
+def _cleanup_old_logs():
+    # this is an hack to get the system tmp dir, identically
+    # how we create it. Delete is false here because of
+    # chicken/egg problems
+    tf = tempfile.NamedTemporaryFile(delete=False, suffix=LOG_SUFFIX,
+                                     prefix=LOG_PREFIX)
+    path = os.path.dirname(tf.name)
+    pattern = f'{LOG_PREFIX}*{LOG_SUFFIX}'
+    for file_ in glob.glob(os.path.join(path, pattern)):
+        try:
+            os.remove(file_)
+        except Exception as err:
+            # just ignore for now, leave the file
+            pass
+
+
+def execute(command, shell=True, redirect_into_tmp=True):
+    _cleanup_old_logs()
+    if not shell:
+        # raw syscall, required command array
+        command = command.split()
+    stderr_fd = sys.stderr
+    stdout_fd = sys.stdout
+    if redirect_into_tmp:
+        tf = _redirect_prepare_fds()
+        stderr_fd = tf.file
+        stdout_fd = tf.file
+    completed = subprocess.run(command, shell=shell, stderr=stderr_fd, stdout=stdout_fd)
+    return _transport_execution_handle(completed, tf)
+
+
+
 
 
 
@@ -16,7 +112,7 @@ RE_GCC_WITH_COLUMN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')
 RE_GCC_WITHOUT_COLUMN = re.compile('^(.*):(\\d+):.*?(warning|error):(.*)$')
 
 @dataclass
-class Entry:
+class WarnErrorEntry:
     '''
     Holds information about ONE gcc warning/error in
     an unified fashion - no matter if gcc/clang or version
@@ -86,7 +182,7 @@ class GccOutputParser:
     def errors_no(self) -> int:
         return self._errors_no
 
-    def warnings(self, path_filter: Optional[str] = None) -> Iterator[Entry]:
+    def warnings(self, path_filter: Optional[str] = None) -> Iterator[WarnErrorEntry]:
         '''
         Just an warning generator
 
@@ -98,7 +194,7 @@ class GccOutputParser:
                 continue
             yield warning
 
-    def errors(self, path_filter: Optional[str] = None) -> Iterator[Entry]:
+    def errors(self, path_filter: Optional[str] = None) -> Iterator[WarnErrorEntry]:
         '''
         Just an error generator
 
@@ -144,16 +240,16 @@ class GccOutputParser:
         lineno = regex_match.group(2)
         column = regex_match.group(3)
         severity = self._error_warning_selector(regex_match.group(4))
-        message = regex_match.group(5)
-        entry = Entry(file_, lineno, severity, column, message)
+        message = regex_match.group(5).strip()
+        entry = WarnErrorEntry(file_, lineno, severity, message, column)
         self._process_new_entry(entry)
 
     def _process_gcc_without_column(self, regex_match):
         file_ = regex_match.group(1).strip()
         lineno = regex_match.group(2)
         severity = self._error_warning_selector(regex_match.group(3))
-        message = regex_match.group(4)
-        entry = Entry(file_, lineno, severity, message)
+        message = regex_match.group(4).strip()
+        entry = WarnErrorEntry(file_, lineno, severity, message)
         self._process_new_entry(entry)
 
     def _process_trace_unmachted(self, line):

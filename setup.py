@@ -5,18 +5,17 @@ this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md')) as f:
     long_description = f.read()
 
-setup(name='gccoutputparser',
+setup(name='builddriver',
       version='0.2.0',
-      description='Parses gcc/llvm output',
+      description='Execute make,cmake and parses gcc/llvm output',
       long_description=long_description,
       long_description_content_type='text/markdown',
-      url='http://github.com/hgn/gccoutputparser',
+      url='http://github.com/hgn/builddriver',
       author='Hagen Paul Pfeifer',
       author_email='hagen@jauu.net',
       license='MIT',
-      packages=['gccoutputparser'],
-      test_suite='nose.collector',
-      tests_require=['nose'],
+      packages=['builddriver'],
+      test_suite='tests',
       classifiers=[
 	'Development Status :: 4 - Beta',
 	'Intended Audience :: Developers',
