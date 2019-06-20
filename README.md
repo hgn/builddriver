@@ -1,4 +1,14 @@
-# gccoutputparser
+# Build Driver
+
+
+Possible integration into build:
+
+```
+Building project-foo, this may take a while
+Compiling failed for compilation unit 'lib-bar'
+Error: ‘stderr’ undeclared (first use in this function) in function qux.c line 23
+The complete build log is available at '/tmp/build-392193.log'
+```
 
 A simple GCC/LLVM (clang) output parser. It reads lines from compiler and
 makefile runs, parse, split them and provides parsed information in a
