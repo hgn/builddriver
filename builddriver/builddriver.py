@@ -20,9 +20,11 @@ LOG_SUFFIX = '.log'
 
 class ExecutionHandle:
 
-    def __init__(self, returncode, tf):
+    def __init__(self, returncode, tf, taillog_size):
         self._returncode = returncode
         self._tf = tf
+        self._taillog_size = taillog_size
+        self._taillog = list()
         self._parsed = False
         self._gccoutputparser = GccOutputParser()
 
@@ -32,6 +34,18 @@ class ExecutionHandle:
     def tmp_name(self):
         return self._tf.name
 
+    def _record_taillog(self, line):
+        if self._taillog_size <= 0:
+            return
+        self._taillog.append(line)
+        # ok, now truncate the array if exede
+        # the user limit (taillog_size), but
+        # we will not truncate all the time, just
+        # when doubled limited is reached
+        if len(self._taillog) > 2 * self._taillog_size:
+            truncation = len(self._taillog) - self._taillog_size
+            self._taillog = self._taillog[truncation:]
+
     def _parse(self):
         # on demand parsing function, can be
         # called several times, but only the first
@@ -40,6 +54,7 @@ class ExecutionHandle:
             return
         with open(self._tf.name) as fd:
             for line in fd:
+                self._record_taillog(line)
                 self._gccoutputparser.record(line)
         self._parsed = True
 
@@ -59,12 +74,21 @@ class ExecutionHandle:
         self._parse()
         return self._gccoutputparser.warnings_no()
 
+    def taillog(self):
+        if len(self._taillog) <= self._taillog_size:
+            return self._taillog
+        # bigger, then self._taillog_size, truncate to
+        # self._taillog_size
+        truncation = len(self._taillog) - self._taillog_size
+        return self._taillog[truncation:]
 
 
-def _transport_execution_handle(completed_process, tf):
+
+def _transport_execution_handle(completed_process, tf, tail_log_size):
     r = ExecutionHandle(
             completed_process.returncode,
-            tf)
+            tf,
+            tail_log_size)
     return r
 
 def _redirect_prepare_fds():
@@ -89,7 +113,10 @@ def _cleanup_old_logs():
             pass
 
 
-def execute(command, shell=True, redirect_into_tmp=True):
+def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, tail_log_size: int = 50):
+    """
+    tail_log_size: the last n lines captured and keep in memory, can be queried with tail()
+    """
     _cleanup_old_logs()
     if not shell:
         # raw syscall, required command array
@@ -101,7 +128,7 @@ def execute(command, shell=True, redirect_into_tmp=True):
         stderr_fd = tf.file
         stdout_fd = tf.file
     completed = subprocess.run(command, shell=shell, stderr=stderr_fd, stdout=stdout_fd)
-    return _transport_execution_handle(completed, tf)
+    return _transport_execution_handle(completed, tf, tail_log_size)
 
 
 
@@ -112,7 +139,7 @@ RE_GCC_WITH_COLUMN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')
 RE_GCC_WITHOUT_COLUMN = re.compile('^(.*):(\\d+):.*?(warning|error):(.*)$')
 
 @dataclass
-class WarnErrorEntry:
+class WarningErrorEntry:
     '''
     Holds information about ONE gcc warning/error in
     an unified fashion - no matter if gcc/clang or version
@@ -182,7 +209,7 @@ class GccOutputParser:
     def errors_no(self) -> int:
         return self._errors_no
 
-    def warnings(self, path_filter: Optional[str] = None) -> Iterator[WarnErrorEntry]:
+    def warnings(self, path_filter: Optional[str] = None) -> Iterator[WarningErrorEntry]:
         '''
         Just an warning generator
 
@@ -194,7 +221,7 @@ class GccOutputParser:
                 continue
             yield warning
 
-    def errors(self, path_filter: Optional[str] = None) -> Iterator[WarnErrorEntry]:
+    def errors(self, path_filter: Optional[str] = None) -> Iterator[WarningErrorEntry]:
         '''
         Just an error generator
 
@@ -241,7 +268,7 @@ class GccOutputParser:
         column = regex_match.group(3)
         severity = self._error_warning_selector(regex_match.group(4))
         message = regex_match.group(5).strip()
-        entry = WarnErrorEntry(file_, lineno, severity, message, column)
+        entry = WarningErrorEntry(file_, lineno, severity, message, column)
         self._process_new_entry(entry)
 
     def _process_gcc_without_column(self, regex_match):
@@ -249,7 +276,7 @@ class GccOutputParser:
         lineno = regex_match.group(2)
         severity = self._error_warning_selector(regex_match.group(3))
         message = regex_match.group(4).strip()
-        entry = WarnErrorEntry(file_, lineno, severity, message)
+        entry = WarningErrorEntry(file_, lineno, severity, message)
         self._process_new_entry(entry)
 
     def _process_trace_unmachted(self, line):
