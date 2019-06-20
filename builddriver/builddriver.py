@@ -17,6 +17,9 @@ from typing import Optional
 LOG_PREFIX = 'build-'
 LOG_SUFFIX = '.log'
 
+class BuildDriverError(Exception): pass
+class ArgumentBuildDriverError(BuildDriverError): pass
+
 
 class ExecutionHandle:
 
@@ -74,7 +77,10 @@ class ExecutionHandle:
         self._parse()
         return self._gccoutputparser.warnings_no()
 
-    def taillog(self):
+    def taillog(self, limit: int):
+        if limit > self._taillog_size:
+            msg = 'taillog() limit must be larger as execute taillog_size'
+            raise ArgumentBuildDriverError(msg)
         if len(self._taillog) <= self._taillog_size:
             return self._taillog
         # bigger, then self._taillog_size, truncate to
@@ -113,9 +119,9 @@ def _cleanup_old_logs():
             pass
 
 
-def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, tail_log_size: int = 50):
+def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, taillog_size: int = 50):
     """
-    tail_log_size: the last n lines captured and keep in memory, can be queried with tail()
+    taillog_size: the last n lines captured and keep in memory, can be queried with tail()
     """
     _cleanup_old_logs()
     if not shell:
@@ -128,7 +134,7 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, ta
         stderr_fd = tf.file
         stdout_fd = tf.file
     completed = subprocess.run(command, shell=shell, stderr=stderr_fd, stdout=stdout_fd)
-    return _transport_execution_handle(completed, tf, tail_log_size)
+    return _transport_execution_handle(completed, tf, taillog_size)
 
 
 
