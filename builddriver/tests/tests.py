@@ -13,11 +13,11 @@ class TestStringMethods(unittest.TestCase):
 
     def test_return_code_true(self):
         ret = builddriver.execute('whereis python3')
-        assert(ret.returncode() == 0)
+        self.assertTrue(ret.returncode() == 0)
 
     def test_return_code_false(self):
         ret = builddriver.execute('this_command_does_not_exists_hopefully')
-        assert(ret.returncode() != 0)
+        self.assertTrue(ret.returncode() != 0)
 
 
 class TestMake(unittest.TestCase):
@@ -25,23 +25,23 @@ class TestMake(unittest.TestCase):
     def test_warning(self):
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
-        assert(ret.returncode() == 0)
-        assert(ret.warnings_no() > 0)
-        assert(ret.errors_no() == 0)
-        for warning in ret.warnings():
-            sys.stderr.write('\n')
-            sys.stderr.write(str(warning))
-            sys.stderr.write('\n')
+        self.assertTrue(ret.returncode() == 0)
+        self.assertTrue(ret.warnings_no() > 0)
+        self.assertTrue(ret.errors_no() == 0)
+        #for warning in ret.warnings():
+        #    sys.stderr.write('\n')
+        #    sys.stderr.write(str(warning))
+        #    sys.stderr.write('\n')
 
     def test_errors(self):
         path = os.path.join(FILE_PATH, 'make-02')
         ret = builddriver.execute(f'make -C {path}')
-        assert(ret.returncode() != 0)
-        assert(ret.errors_no() > 0)
-        for warning in ret.errors():
-            sys.stderr.write('\n')
-            sys.stderr.write(str(warning))
-            sys.stderr.write('\n')
+        self.assertTrue(ret.returncode() != 0)
+        self.assertTrue(ret.errors_no() > 0)
+        #for warning in ret.errors():
+        #    sys.stderr.write('\n')
+        #    sys.stderr.write(str(warning))
+        #    sys.stderr.write('\n')
 
 
 class TestTaillog(unittest.TestCase):
@@ -49,26 +49,26 @@ class TestTaillog(unittest.TestCase):
     def test_init(self):
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
-        assert(len(ret.taillog()) > 0)
+        self.assertTrue(len(ret.taillog()) > 0)
 
     def test_all(self):
         # I counted this manually, 
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
-        assert(len(ret.taillog()) == 25)
+        self.assertTrue(len(ret.taillog()) == 25)
 
     def test_limit(self):
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
         tail_lines = ret.taillog(limit=2)
-        assert(len(tail_lines) == 2)
+        self.assertTrue(len(tail_lines) == 2)
 
     def test_last_line(self):
         # I know this
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
         tail_lines = ret.taillog(limit=2)
-        assert('make[1]: Leaving directory' in tail_lines[-1])
+        self.assertTrue('make[1]: Leaving directory' in tail_lines[-1])
 
 
 
