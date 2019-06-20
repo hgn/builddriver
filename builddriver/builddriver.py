@@ -77,15 +77,20 @@ class ExecutionHandle:
         self._parse()
         return self._gccoutputparser.warnings_no()
 
-    def taillog(self, limit: int):
-        if limit > self._taillog_size:
+    def taillog(self, limit: Optional[int] = None):
+        self._parse()
+        if limit and int(limit) > self._taillog_size:
             msg = 'taillog() limit must be larger as execute taillog_size'
             raise ArgumentBuildDriverError(msg)
-        if len(self._taillog) <= self._taillog_size:
+        if limit and limit < self._taillog_size:
+            truncate_goal = int(limit)
+        else:
+            truncate_goal = self._taillog_size
+        if len(self._taillog) <= truncate_goal:
             return self._taillog
         # bigger, then self._taillog_size, truncate to
         # self._taillog_size
-        truncation = len(self._taillog) - self._taillog_size
+        truncation = len(self._taillog) - truncate_goal
         return self._taillog[truncation:]
 
 
@@ -119,7 +124,7 @@ def _cleanup_old_logs():
             pass
 
 
-def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, taillog_size: int = 50):
+def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, taillog_size: int = 256):
     """
     taillog_size: the last n lines captured and keep in memory, can be queried with tail()
     """

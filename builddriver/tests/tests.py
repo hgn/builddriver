@@ -5,7 +5,8 @@ import unittest
 
 import builddriver
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+FILE_PATH = os.path.dirname(os.path.realpath(__file__))
+
 
 class TestStringMethods(unittest.TestCase):
 
@@ -18,10 +19,11 @@ class TestStringMethods(unittest.TestCase):
         ret = builddriver.execute('this_command_does_not_exists_hopefully')
         assert(ret.returncode() != 0)
 
+
 class TestMake(unittest.TestCase):
 
     def test_warning(self):
-        path = os.path.join(dir_path, 'make-01')
+        path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
         assert(ret.returncode() == 0)
         assert(ret.warnings_no() > 0)
@@ -32,7 +34,7 @@ class TestMake(unittest.TestCase):
             sys.stderr.write('\n')
 
     def test_errors(self):
-        path = os.path.join(dir_path, 'make-02')
+        path = os.path.join(FILE_PATH, 'make-02')
         ret = builddriver.execute(f'make -C {path}')
         assert(ret.returncode() != 0)
         assert(ret.errors_no() > 0)
@@ -40,6 +42,33 @@ class TestMake(unittest.TestCase):
             sys.stderr.write('\n')
             sys.stderr.write(str(warning))
             sys.stderr.write('\n')
+
+
+class TestTaillog(unittest.TestCase):
+
+    def test_init(self):
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}')
+        assert(len(ret.taillog()) > 0)
+
+    def test_all(self):
+        # I counted this manually, 
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}')
+        assert(len(ret.taillog()) == 25)
+
+    def test_limit(self):
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}')
+        tail_lines = ret.taillog(limit=2)
+        assert(len(tail_lines) == 2)
+
+    def test_last_line(self):
+        # I know this
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}')
+        tail_lines = ret.taillog(limit=2)
+        assert('make[1]: Leaving directory' in tail_lines[-1])
 
 
 
