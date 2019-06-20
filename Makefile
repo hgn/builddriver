@@ -4,7 +4,7 @@ install:
 	pip3 install -e . --no-deps
 
 test:
-	python3 -m unittest builddriver/tests/tests.py
+	python3 -m unittest -v --failfast builddriver/tests/tests.py
 
 lint:
 	pylint3 --disable=too-many-instance-attributes builddriver/builddriver.py
