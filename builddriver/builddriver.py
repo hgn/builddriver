@@ -91,9 +91,13 @@ class ExecutionHandle:
         self._parse()
         return self._gccoutputparser.warnings_no()
 
-    def unknowns_no(self) -> int:
+    def matched_unknowns_no(self) -> int:
         self._parse()
-        return self._gccoutputparser.unknowns_no()
+        return self._gccoutputparser.matched_unknowns_no()
+
+    def unmatched_no(self) -> int:
+        self._parse()
+        return self._gccoutputparser.unmatched_no()
 
     def taillog(self, limit: Optional[int] = None):
         self._parse()
@@ -174,14 +178,14 @@ class GccOutputParser:
         self._parsed_lines = 0
         self._warnings_no = 0
         self._errors_no = 0
-        self._unknown_no = 0
+        self._matched_unknown_no = 0
         self._db_warnings = list()
         self._db_errors = list()
         # optional tracing
-        self._trace_unmatched = types.SimpleNamespace()
-        self._trace_unmatched.enabled = kwargs.get('trace_unmatched', False)
-        self._trace_unmatched.db = list()
-        self._trace_unmatched.no = 0
+        self._unmatched = types.SimpleNamespace()
+        self._unmatched.enabled = kwargs.get('trace_unmatched', False)
+        self._unmatched.db = list()
+        self._unmatched.no = 0
 
     def unmatched(self) -> List[str]:
         """
@@ -194,12 +198,12 @@ class GccOutputParser:
         kwargs = { "trace_unmatched": True }
         e = gccoutputparser.GccOutputParser(**kwargs)
         """
-        if not self._trace_unmatched.enabled:
+        if not self._unmatched.enabled:
             return None
-        return self._trace_unmatched.db
+        return self._unmatched.db
 
     def unmatched_no(self) -> int:
-        return self._trace_unmatched.no
+        return self._unmatched.no
 
     def parsed_lines(self) -> int:
         return self._parsed_lines
@@ -225,8 +229,8 @@ class GccOutputParser:
     def errors_no(self) -> int:
         return self._errors_no
 
-    def unknowns_no(self) -> int:
-        return self._unknown_no
+    def matched_unknowns_no(self) -> int:
+        return self._matched_unknown_no
 
     def warnings(self, path_filter: Optional[str] = None) -> Iterator[WarningErrorEntry]:
         '''
@@ -261,7 +265,7 @@ class GccOutputParser:
             return 'error'
         if 'warning' in string:
             return 'warning'
-        return 'unknown'
+        return 'matched-unknown'
 
     def _account_severity(self, entry):
         if entry.severity == 'warning':
@@ -269,7 +273,7 @@ class GccOutputParser:
         elif entry.severity == 'error':
             self._errors_no += 1
         else:
-            self._unknown_no += 1
+            self._matched_unknown_no += 1
 
     def _process_new_entry(self, entry):
         if entry.severity == 'warning':
@@ -299,10 +303,10 @@ class GccOutputParser:
         self._process_new_entry(entry)
 
     def _process_trace_unmachted(self, line):
-        self._trace_unmatched.no += 1
-        if not self._trace_unmatched.enabled:
+        self._unmatched.no += 1
+        if not self._unmatched.enabled:
             return
-        self._trace_unmatched.db.append(line)
+        self._unmatched.db.append(line)
 
 
 

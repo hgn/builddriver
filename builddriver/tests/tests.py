@@ -28,9 +28,10 @@ class TestMake(unittest.TestCase):
         self.assertTrue(ret.returncode() == 0)
         self.assertTrue(ret.warnings_no() > 0)
         self.assertTrue(ret.errors_no() == 0)
+        self.assertTrue(ret.matched_unknowns_no() == 0)
+        self.assertTrue(ret.unmatched_no() > 0)
         #for warning in ret.warnings():
         #    sys.stderr.write('\n')
-        #    sys.stderr.write(str(warning))
         #    sys.stderr.write('\n')
 
     def test_errors(self):
@@ -38,6 +39,8 @@ class TestMake(unittest.TestCase):
         ret = builddriver.execute(f'make -C {path}')
         self.assertTrue(ret.returncode() != 0)
         self.assertTrue(ret.errors_no() > 0)
+        self.assertTrue(ret.matched_unknowns_no() == 0)
+        self.assertTrue(ret.unmatched_no() > 0)
         #for warning in ret.errors():
         #    sys.stderr.write('\n')
         #    sys.stderr.write(str(warning))
