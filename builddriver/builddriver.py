@@ -21,6 +21,20 @@ class BuildDriverError(Exception): pass
 class ArgumentBuildDriverError(BuildDriverError): pass
 
 
+@dataclass
+class WarningErrorEntry:
+    '''
+    Holds information about ONE gcc warning/error in
+    an unified fashion - no matter if gcc/clang or version
+    '''
+    path: str
+    lineno: int
+    severity: str
+    message: str
+    column: int = None
+
+
+
 class ExecutionHandle:
 
     def __init__(self, returncode, tf, taillog_size):
@@ -61,21 +75,25 @@ class ExecutionHandle:
                 self._gccoutputparser.record(line)
         self._parsed = True
 
-    def errors(self):
+    def errors(self) -> Iterator[WarningErrorEntry]:
         self._parse()
         return self._gccoutputparser.errors()
 
-    def errors_no(self):
+    def errors_no(self) -> int:
         self._parse()
         return self._gccoutputparser.errors_no()
 
-    def warnings(self):
+    def warnings(self) -> Iterator[WarningErrorEntry]:
         self._parse()
         return self._gccoutputparser.warnings()
 
-    def warnings_no(self):
+    def warnings_no(self) -> int:
         self._parse()
         return self._gccoutputparser.warnings_no()
+
+    def unknowns_no(self) -> int:
+        self._parse()
+        return self._gccoutputparser.unknowns_no()
 
     def taillog(self, limit: Optional[int] = None):
         self._parse()
@@ -149,19 +167,6 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, ta
 RE_GCC_WITH_COLUMN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')
 RE_GCC_WITHOUT_COLUMN = re.compile('^(.*):(\\d+):.*?(warning|error):(.*)$')
 
-@dataclass
-class WarningErrorEntry:
-    '''
-    Holds information about ONE gcc warning/error in
-    an unified fashion - no matter if gcc/clang or version
-    '''
-    path: str
-    lineno: int
-    severity: str
-    message: str
-    column: int = None
-
-
 
 class GccOutputParser:
 
@@ -219,6 +224,9 @@ class GccOutputParser:
 
     def errors_no(self) -> int:
         return self._errors_no
+
+    def unknowns_no(self) -> int:
+        return self._unknown_no
 
     def warnings(self, path_filter: Optional[str] = None) -> Iterator[WarningErrorEntry]:
         '''
