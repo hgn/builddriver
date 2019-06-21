@@ -68,7 +68,7 @@ class TestTaillog(unittest.TestCase):
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
         tail_lines = ret.taillog(limit=2)
-        self.assertTrue('make[1]: Leaving directory' in tail_lines[-1])
+        self.assertTrue('Leaving directory' in tail_lines[-1])
 
 
 
