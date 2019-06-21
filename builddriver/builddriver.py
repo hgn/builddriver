@@ -44,8 +44,8 @@ class ExecutionHandle:
         self._taillog_size = taillog_size
         self._taillog = list()
         self._parsed = False
-        kwargs = { "record_unmatched": record_unmatched }
-        self._gccoutputparser = GccOutputParser()
+        kwargs = {"record_unmatched": record_unmatched}
+        self._gccoutputparser = GccOutputParser(**kwargs)
 
     def returncode(self):
         return self._returncode
@@ -141,10 +141,10 @@ class ExecutionHandle:
 def _transport_execution_handle(completed_process, tf, tail_log_size,
                                 record_unmatched):
     r = ExecutionHandle(
-            completed_process.returncode,
-            tf,
-            tail_log_size,
-            record_unmatched)
+        completed_process.returncode,
+        tf,
+        tail_log_size,
+        record_unmatched)
     return r
 
 def _redirect_prepare_fds():
@@ -164,7 +164,7 @@ def _cleanup_old_logs():
     for file_ in glob.glob(os.path.join(path, pattern)):
         try:
             os.remove(file_)
-        except Exception as err:
+        except Exception:
             # just ignore for now, leave the file
             pass
 
