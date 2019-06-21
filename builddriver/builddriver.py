@@ -12,6 +12,7 @@ import tempfile
 from dataclasses import dataclass
 from typing import Iterator
 from typing import List
+from typing import Dict
 from typing import Optional
 
 LOG_PREFIX = 'build-'
@@ -170,9 +171,17 @@ def _cleanup_old_logs():
 
 def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
             taillog_size: int = 256, record_unmatched: bool = False,
-            cwd=None, env=None):
-    """
-    taillog_size: the last n lines captured and keep in memory, can be queried with tail()
+            cwd: Optional[str] = None, env: Optional[Dict[str, str]] = None):
+    """Execute an given command, mainly gnu make, cmake or gcc direclty.
+
+    Args:
+        param1: The first parameter.
+        param2: The second parameter.
+        taillog_size: the last n lines captured and keep in memory,
+            can be queried with tail()
+
+    Returns:
+        True if successful, False otherwise.
     """
     _cleanup_old_logs()
     if not shell:
