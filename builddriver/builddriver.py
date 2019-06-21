@@ -169,7 +169,8 @@ def _cleanup_old_logs():
 
 
 def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
-            taillog_size: int = 256, record_unmatched: bool = False):
+            taillog_size: int = 256, record_unmatched: bool = False,
+            cwd=None, env=None):
     """
     taillog_size: the last n lines captured and keep in memory, can be queried with tail()
     """
@@ -183,7 +184,8 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
         tf = _redirect_prepare_fds()
         stderr_fd = tf.file
         stdout_fd = tf.file
-    completed = subprocess.run(command, shell=shell, stderr=stderr_fd, stdout=stdout_fd)
+    completed = subprocess.run(command, cwd=cwd, env=env, shell=shell,
+                               stderr=stderr_fd, stdout=stdout_fd)
     return _transport_execution_handle(completed, tf, taillog_size, record_unmatched)
 
 
