@@ -37,12 +37,13 @@ class WarningErrorEntry:
 
 class ExecutionHandle:
 
-    def __init__(self, returncode, tf, taillog_size):
+    def __init__(self, returncode, tf, taillog_size, record_unmatched):
         self._returncode = returncode
         self._tf = tf
         self._taillog_size = taillog_size
         self._taillog = list()
         self._parsed = False
+        kwargs = { "record_unmatched": record_unmatched }
         self._gccoutputparser = GccOutputParser()
 
     def returncode(self):
@@ -99,6 +100,25 @@ class ExecutionHandle:
         self._parse()
         return self._gccoutputparser.unmatched_no()
 
+    def unmatched(self) -> int:
+        """Returns lines where gcc/llvm warning/error matcher failed
+
+        This normally includes makefile output and other program
+        output.
+
+        Note:
+            It is required to enable tracing. Tracing holds all
+            line in memory. Thus for larger projects it will
+            hurt performance.
+
+        Returns:
+            This method return None if tracing was not enabled,
+            an empty list if every line could be parsed or the
+            unparseable lines.
+        """
+        self._parse()
+        return self._gccoutputparser.unmatched()
+
     def taillog(self, limit: Optional[int] = None):
         self._parse()
         if limit and int(limit) > self._taillog_size:
@@ -117,11 +137,13 @@ class ExecutionHandle:
 
 
 
-def _transport_execution_handle(completed_process, tf, tail_log_size):
+def _transport_execution_handle(completed_process, tf, tail_log_size,
+                                record_unmatched):
     r = ExecutionHandle(
             completed_process.returncode,
             tf,
-            tail_log_size)
+            tail_log_size,
+            record_unmatched)
     return r
 
 def _redirect_prepare_fds():
@@ -146,7 +168,8 @@ def _cleanup_old_logs():
             pass
 
 
-def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, taillog_size: int = 256):
+def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
+            taillog_size: int = 256, record_unmatched: bool = False):
     """
     taillog_size: the last n lines captured and keep in memory, can be queried with tail()
     """
@@ -161,7 +184,7 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True, ta
         stderr_fd = tf.file
         stdout_fd = tf.file
     completed = subprocess.run(command, shell=shell, stderr=stderr_fd, stdout=stdout_fd)
-    return _transport_execution_handle(completed, tf, taillog_size)
+    return _transport_execution_handle(completed, tf, taillog_size, record_unmatched)
 
 
 
@@ -183,7 +206,7 @@ class GccOutputParser:
         self._db_errors = list()
         # optional tracing
         self._unmatched = types.SimpleNamespace()
-        self._unmatched.enabled = kwargs.get('trace_unmatched', False)
+        self._unmatched.enabled = kwargs.get('record_unmatched', False)
         self._unmatched.db = list()
         self._unmatched.no = 0
 
