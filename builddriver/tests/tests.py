@@ -74,6 +74,19 @@ class TestTaillog(unittest.TestCase):
         self.assertTrue('Leaving directory' in tail_lines[-1])
 
 
+class TestCleanup(unittest.TestCase):
+
+    def test_tmp_rm(self):
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}')
+        ret.tmp_file_rm()
+
+    def test_disable_precleanup(self):
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}', precleanup=False)
+        # this should work as well
+        ret.tmp_file_rm()
+
 
 
 if __name__ == '__main__':

@@ -53,6 +53,23 @@ class ExecutionHandle:
     def tmp_name(self):
         return self._tf.name
 
+    def tmp_file_rm(self):
+        """Deletes the temporary file, created during build.
+
+        Normally you should call this function to cleanup the
+        generated tmp files. You can call this function in an
+        exit handler to make sure the function is called in any
+        circumstance.
+
+        Note:
+            See precleanup for other options to deal with tmp
+            files.
+        """
+        filepath = self._tf.name
+        if not os.path.isfile(filepath):
+            return
+        os.remove(filepath)
+
     def _record_taillog(self, line):
         if self._taillog_size <= 0:
             return
@@ -171,11 +188,15 @@ def _cleanup_old_logs():
 
 def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
             taillog_size: int = 256, record_unmatched: bool = False,
+            precleanup: bool = True,
             cwd: Optional[str] = None, env: Optional[Dict[str, str]] = None):
     """Execute an given command, mainly gnu make, cmake or gcc direclty.
 
     Args:
-        param1: The first parameter.
+        precleanup: If true (default) it removes all tmp log files it will
+            find on the filesystem (usually within tmp). Set this to False
+            if multiple instances of builddriver is executed in parallel.
+            If not, you will delete potential files used in the future.
         param2: The second parameter.
         taillog_size: the last n lines captured and keep in memory,
             can be queried with tail()
@@ -183,7 +204,8 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
     Returns:
         True if successful, False otherwise.
     """
-    _cleanup_old_logs()
+    if precleanup:
+        _cleanup_old_logs()
     if not shell:
         # raw syscall, required command array
         command = command.split()
