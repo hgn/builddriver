@@ -137,10 +137,12 @@ class ExecutionHandle:
         self._parse()
         return self._gccoutputparser.unmatched()
 
-    def taillog(self, limit: Optional[int] = None):
+    def taillog(self, limit: Optional[int] = None) -> List:
+        """Return the last n lines of the log
+        """
         self._parse()
         if limit and int(limit) > self._taillog_size:
-            msg = 'taillog() limit must be larger as execute taillog_size'
+            msg = 'taillog() limit must be larger as execute() taillog_size'
             raise ArgumentBuildDriverError(msg)
         if limit and limit < self._taillog_size:
             truncate_goal = int(limit)
