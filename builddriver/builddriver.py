@@ -155,6 +155,21 @@ class ExecutionHandle:
         truncation = len(self._taillog) - truncate_goal
         return self._taillog[truncation:]
 
+    def log(self) -> str:
+        """Return the complete log information
+
+        Note:
+            The user can split() the lines if required. Often
+            it is not required (e.g. to print for user). Thus
+            we do not burn the CPU cycles for nothing.
+
+        Returns:
+            string object of all output.
+        """
+        # no self._parse() this is just an shortcut
+        # to save processing time here.
+        with open(self._tf.name, 'r') as fd:
+            return fd.read()
 
 
 def _transport_execution_handle(completed_process, tf, tail_log_size,
