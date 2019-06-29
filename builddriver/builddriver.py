@@ -243,6 +243,7 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
 
 RE_GCC_WITH_COLUMN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')
 RE_GCC_WITHOUT_COLUMN = re.compile('^(.*):(\\d+):.*?(warning|error):(.*)$')
+RE_LD_GENERIC =  re.compile('^.*:\s+(?:undefined reference to|could not read symbols)\s+.+$')
 
 
 class GccOutputParser:
@@ -292,6 +293,10 @@ class GccOutputParser:
             m = RE_GCC_WITHOUT_COLUMN.match(line)
             if m:
                 self._process_gcc_without_column(m)
+                continue
+            m = RE_LD_GENERIC.match(line)
+            if m:
+                self._process_ld_generic(m)
                 continue
             # trace unmachted, if enabled
             self._process_trace_unmachted(line)
@@ -375,6 +380,16 @@ class GccOutputParser:
         entry = WarningErrorEntry(file_, lineno, severity, message)
         self._process_new_entry(entry)
 
+    def _process_ld_generic(self, regex_match):
+        # function do not group match, because the line can differ
+        # thus we do a deep scanning now (ld specific deep scanning).
+        file_ = regex_match.group(1).strip()
+        lineno = regex_match.group(2)
+        severity = self._error_warning_selector(regex_match.group(3))
+        message = regex_match.group(4).strip()
+        entry = WarningErrorEntry(file_, lineno, severity, message)
+        self._process_new_entry(entry)
+
     def _process_trace_unmachted(self, line):
         self._unmatched.no += 1
         if not self._unmatched.enabled:
@@ -385,3 +400,4 @@ class GccOutputParser:
 
 if __name__ == "__main__":
     sys.stderr.write("Please import this file and use provided function\n")
+    sys.exit(1)
