@@ -237,13 +237,15 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
     return _transport_execution_handle(completed, tf, taillog_size, record_unmatched)
 
 
-
-
-
-
 RE_GCC_WITH_COLUMN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')
 RE_GCC_WITHOUT_COLUMN = re.compile('^(.*):(\\d+):.*?(warning|error):(.*)$')
-RE_LD_GENERIC =  re.compile('^.*:\s+(?:undefined reference to|could not read symbols)\s+.+$')
+
+# (.text+0x20): undefined reference to `main'
+RE_LD_GENERIC = re.compile('^.*:\s+(?:undefined reference to|could not read symbols).+$')
+# /home/me/dev/temp/foo.cpp:7: undefined reference to `clock_gettime'
+RE_LD_WITH_FILE_LINE_NO = re.compile('^(.*):(\d+):\s+((?:undefined reference to|could not read symbols).+)$')
+# foo.cpp:(.text+0x15): undefined reference to `clock_gettime'
+RE_LD_WITH_FILE = re.compile('^(.*):.+:\s+((?:undefined reference to|could not read symbols).+)$')
 
 
 class GccOutputParser:
