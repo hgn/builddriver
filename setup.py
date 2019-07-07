@@ -6,7 +6,7 @@ with open(path.join(this_directory, 'README.md')) as f:
     long_description = f.read()
 
 setup(name='builddriver',
-      version='0.6.0',
+      version='0.7.0',
       description='Execute make, cmake, maven and parses gcc/llvm output',
       long_description=long_description,
       long_description_content_type='text/markdown',
