@@ -8,6 +8,7 @@ import glob
 import types
 import subprocess
 import tempfile
+import datetime
 
 from dataclasses import dataclass
 from typing import Iterator
@@ -38,10 +39,11 @@ class WarningErrorEntry:
 
 class ExecutionHandle:
 
-    def __init__(self, returncode, tf, taillog_size, record_unmatched):
+    def __init__(self, returncode, tf, taillog_size, record_unmatched, build_duration):
         self._returncode = returncode
         self._tf = tf
         self._taillog_size = taillog_size
+        self._build_duration = build_duration
         self._taillog = list()
         self._parsed = False
         kwargs = {"record_unmatched": record_unmatched}
@@ -171,14 +173,42 @@ class ExecutionHandle:
         with open(self._tf.name, 'r') as fd:
             return fd.read()
 
+    def build_duration(self):
+        """Returns a datetime.timedelta object of the buildprocess
+
+        Note:
+            This does not include time to analyse the build output.
+            This may also time some time.
+
+        Returns:
+            a datetime.timedelta object
+        """
+        return self._build_duration
+
+    def build_duration_human(self, formatstr: str = '{:0>8}') -> str:
+        """Return a human formated duration of the build
+
+        Args:
+            formatstr a string how to format the timedelta object,
+            default is {:0>8}
+
+        Returns:
+            a string looks like:
+                '00:00:59' - if it took 59 seconds
+                '01:00:00' - if it took exactly one hour
+                '1 day, 0:00:01' - if it took one day and one seond
+        """
+        formatstr.format(str(self._build_duration))
+
 
 def _transport_execution_handle(completed_process, tf, tail_log_size,
-                                record_unmatched):
+                                record_unmatched, build_duration):
     r = ExecutionHandle(
         completed_process.returncode,
         tf,
         tail_log_size,
-        record_unmatched)
+        record_unmatched,
+        build_duration)
     return r
 
 def _redirect_prepare_fds():
@@ -221,6 +251,7 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
     Returns:
         True if successful, False otherwise.
     """
+    build_time_start = datetime.datetime.now()
     if precleanup:
         _cleanup_old_logs()
     if not shell:
@@ -234,7 +265,9 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
         stdout_fd = tf.file
     completed = subprocess.run(command, cwd=cwd, env=env, shell=shell,
                                stderr=stderr_fd, stdout=stdout_fd)
-    return _transport_execution_handle(completed, tf, taillog_size, record_unmatched)
+    build_duration = datetime.datetime.now() - build_time_start
+    return _transport_execution_handle(completed, tf, taillog_size,
+                                       record_unmatched, build_duration)
 
 
 RE_GCC_WITH_COLUMN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')

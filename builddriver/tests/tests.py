@@ -96,6 +96,26 @@ class TestLog(unittest.TestCase):
         self.assertTrue(len(ret.log()) > 0)
 
 
+class TestBuildDuration(unittest.TestCase):
+
+    def test_duration(self):
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}')
+        timedelta = ret.build_duration()
+        # simple test, call make should be longer then 0
+        # on all platforms
+        self.assertTrue(timedelta.microseconds > 1)
+
+
+
+class TestLog(unittest.TestCase):
+
+    def test_log(self):
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}')
+        self.assertTrue(len(ret.log()) > 0)
+
+
 
 if __name__ == '__main__':
     unittest.main()
