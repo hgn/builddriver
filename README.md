@@ -33,17 +33,34 @@ standard output.
 
 ## Usage
 
+### As Python Module
+
 ```
-import gccoutputparser
+import builddriver
 
-e = gccoutputparser.GccOutputParser(working_directory=os.pwd())
-e.feed()
+result = builddriver.execute('make -C path/to/makfile')
+result.returncode()
+result.errors_no()
+result.warnings_no()
+result.taillog()
+result.build_duration()
+result.build_duration_human()
+result.log()
+result.tmp_name()
+result.tmp_file_rm()
+list(result.errors())
+list(result.warnings())
+```
 
-stats = e.statistics()
+### As Python Executable
 
-number_warnings = len(e.warnings())
+Compiling the Linux Kernel (not a "good" example, because there is usually no
+warning in the build, except you increase the warning level somehow):
 
-e.warnings(path_filter='path/matching/in')
-
+```sh
+$ python3 -m builddriver make -j16 V=2 O=../linux-build
+builddriver executing: 'make -j16 V=2 O=../linux-build'
+Compilation SUCCEED in 297.833702 seconds
+Number of warnings: 0
 ```
 

@@ -1,7 +1,7 @@
 
 
 install:
-	pip3 install -e . --no-deps
+	pip3 install --user -e . --no-deps
 
 test:
 	python3 -m unittest -v --failfast builddriver/tests/tests.py

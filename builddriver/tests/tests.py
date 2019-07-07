@@ -106,6 +106,10 @@ class TestBuildDuration(unittest.TestCase):
         # on all platforms
         self.assertTrue(timedelta.microseconds > 1)
 
+    def test_duration_human(self):
+        path = os.path.join(FILE_PATH, 'make-01')
+        ret = builddriver.execute(f'make -C {path}')
+        timedelta = ret.build_duration_human()
 
 
 class TestLog(unittest.TestCase):
