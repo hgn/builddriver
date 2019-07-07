@@ -279,6 +279,8 @@ RE_LD_GENERIC = re.compile('^.*:\s+(?:undefined reference to|could not read symb
 RE_LD_WITH_FILE_LINE_NO = re.compile('^(.*):(\d+):\s+((?:undefined reference to|could not read symbols).+)$')
 # foo.cpp:(.text+0x15): undefined reference to `clock_gettime'
 RE_LD_WITH_FILE = re.compile('^(.*):.+:\s+((?:undefined reference to|could not read symbols).+)$')
+# (.text+0x20): undefined reference to `main'
+RE_LD_WITHOUT_FILE = re.compile('^(.*):\s+((?:undefined reference to|could not read symbols).+)$')
 
 
 class GccOutputParser:
@@ -331,7 +333,9 @@ class GccOutputParser:
                 continue
             m = RE_LD_GENERIC.match(line)
             if m:
-                self._process_ld_generic(m)
+                # some sort of pre-match matched, we
+                # will do a deep scan in the function
+                self._process_ld_generic(line)
                 continue
             # trace unmachted, if enabled
             self._process_trace_unmachted(line)
@@ -415,15 +419,38 @@ class GccOutputParser:
         entry = WarningErrorEntry(file_, lineno, severity, message)
         self._process_new_entry(entry)
 
-    def _process_ld_generic(self, regex_match):
+    def _process_ld_generic(self, line):
         # function do not group match, because the line can differ
         # thus we do a deep scanning now (ld specific deep scanning).
-        file_ = regex_match.group(1).strip()
-        lineno = regex_match.group(2)
-        severity = self._error_warning_selector(regex_match.group(3))
-        message = regex_match.group(4).strip()
-        entry = WarningErrorEntry(file_, lineno, severity, message)
-        self._process_new_entry(entry)
+        m = RE_LD_WITH_FILE_LINE_NO.match(line)
+        if m:
+            file_ = m.group(1).strip()
+            lineno = m.group(2)
+            severity = 'error'
+            message = m.group(3).strip()
+            entry = WarningErrorEntry(file_, lineno, severity, message)
+            self._process_new_entry(entry)
+            return
+        m = RE_LD_WITH_FILE.match(line)
+        if m:
+            file_ = m.group(1).strip()
+            lineno = -1
+            severity = 'error'
+            message = m.group(2).strip()
+            entry = WarningErrorEntry(file_, lineno, severity, message)
+            self._process_new_entry(entry)
+            return
+        m = RE_LD_WITHOUT_FILE.match(line)
+        if m:
+            file_ = m.group(1)
+            lineno = -1
+            severity = 'error'
+            message = m.group(2).strip()
+            entry = WarningErrorEntry(file_, lineno, severity, message)
+            self._process_new_entry(entry)
+            return
+        # trace unmachted, if enabled
+        self._process_trace_unmachted(line)
 
     def _process_trace_unmachted(self, line):
         self._unmatched.no += 1

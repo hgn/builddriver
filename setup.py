@@ -24,5 +24,10 @@ setup(name='builddriver',
 	'Programming Language :: Python :: 3',
 	'Programming Language :: Python :: 3.7',
         ],
+      entry_points={
+          'console_scripts': [
+              'builddriver = builddriver.__main__:main'
+          ]
+      },
       zip_safe=False
      )
