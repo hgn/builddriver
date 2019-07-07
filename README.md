@@ -22,14 +22,8 @@ Counters? Affected files?
 Simple install this module via pip (pip for Python 2 is also supported)
 
 ```
-pip3 install --user gccoutputparser
+pip3 install --user builddriver
 ```
-
-## Preface
-
-GCC sends warnings and errors to standard error while normal output goes to
-standard output.
-
 
 ## Usage
 
@@ -39,6 +33,8 @@ standard output.
 import builddriver
 
 result = builddriver.execute('make -C path/to/makfile')
+# now wait until make finished, after that the following
+# function can be used:
 result.returncode()
 result.errors_no()
 result.warnings_no()
