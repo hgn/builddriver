@@ -25,7 +25,11 @@ def main():
         sys.stderr.write('  Line Number: {}\n'.format(error.lineno))
         sys.stderr.write('  Column: {}\n'.format(error.column))
         sys.stderr.write('For full log, please open: {}\n'.format(ret.tmp_name()))
+        return retcode
 
+    for warn in ret.warnings():
+        print(warn)
+    sys.stderr.write('For full log, please open: {}\n'.format(ret.tmp_name()))
 
     return retcode
 

@@ -52,13 +52,13 @@ class TestTaillog(unittest.TestCase):
     def test_init(self):
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
-        self.assertTrue(len(ret.taillog()) > 0)
+        self.assertTrue(len(ret.taillog()) > 2)
 
     def test_all(self):
         # I counted this manually, 
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
-        self.assertTrue(len(ret.taillog()) == 25)
+        self.assertTrue(len(ret.taillog()) > 2)
 
     def test_limit(self):
         path = os.path.join(FILE_PATH, 'make-01')
@@ -69,7 +69,7 @@ class TestTaillog(unittest.TestCase):
     def test_last_line(self):
         # I know this
         path = os.path.join(FILE_PATH, 'make-01')
-        ret = builddriver.execute(f'make -C {path}')
+        ret = builddriver.execute(f'make -w -C {path}')
         tail_lines = ret.taillog(limit=2)
         self.assertTrue('Leaving directory' in tail_lines[-1])
 
@@ -88,7 +88,7 @@ class TestCleanup(unittest.TestCase):
         ret.tmp_file_rm()
 
 
-class TestLog(unittest.TestCase):
+class TestLogTmp(unittest.TestCase):
 
     def test_log(self):
         path = os.path.join(FILE_PATH, 'make-01')
@@ -110,13 +110,14 @@ class TestBuildDuration(unittest.TestCase):
         path = os.path.join(FILE_PATH, 'make-01')
         ret = builddriver.execute(f'make -C {path}')
         timedelta = ret.build_duration_human()
+        self.assertTrue(timedelta != None)
 
 
 class TestLog(unittest.TestCase):
 
     def test_log(self):
         path = os.path.join(FILE_PATH, 'make-01')
-        ret = builddriver.execute(f'make -C {path}')
+        ret = builddriver.execute(f'make -C {path}' redirect_into_tmp=False)
         self.assertTrue(len(ret.log()) > 0)
 
 
