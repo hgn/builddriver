@@ -116,9 +116,8 @@ class TestLog(unittest.TestCase):
 
     def test_log(self):
         path = os.path.join(FILE_PATH, 'make-01')
-        ret = builddriver.execute(f'make -C {path}', redirect_into_tmp=False)
+        ret = builddriver.execute(f'make -C {path}')
         self.assertTrue(len(ret.log()) > 0)
-        ret.tmp_file_rm()  # this should work as well
 
 
 if __name__ == '__main__':
