@@ -125,7 +125,7 @@ class ExecutionHandle:
         self._parse()
         return self._gccoutputparser.unmatched_no()
 
-    def unmatched(self) -> int:
+    def unmatched(self) -> List:
         """Returns lines where gcc/llvm warning/error matcher failed
 
         This normally includes makefile output and other program
@@ -399,10 +399,12 @@ class GccOutputParser:
 
     def _process_new_entry(self, entry):
         if entry.severity == 'warning':
-            self._db_warnings.append(entry)
+            if not entry in self._db_warnings:
+                self._db_warnings.append(entry)
+                self._account_severity(entry)
         if entry.severity == 'error':
             self._db_errors.append(entry)
-        self._account_severity(entry)
+            self._account_severity(entry)
         # sys.stderr.write('\n')
         # sys.stderr.write(str(entry))
         # sys.stderr.write('\n')
