@@ -7,17 +7,17 @@ test:
 	python3 -m unittest -v --failfast builddriver/tests/tests.py
 
 lint:
-	pylint3 --disable=too-many-instance-attributes builddriver/builddriver.py
+	pylint --disable=too-many-instance-attributes builddriver/builddriver.py
 
-setup:
+setup: bootstrap
 	python3 setup.py sdist
 	python3 setup.py bdist_wheel --universal
 
-upload: setup
+upload: setup lint test
 	twine upload dist/*
 
 bootstrap:
-	python3 -m pip install --user --upgrade setuptools wheel twine
+	python3 -m pip install --user --upgrade setuptools wheel twine pylint
 
 really-clean:
 	git clean -fdx

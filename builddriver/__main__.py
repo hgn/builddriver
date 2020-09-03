@@ -16,7 +16,7 @@ def main():
     else:
         msg = 'Compilation FAILED in {} seconds\n'
     sys.stderr.write(msg.format(ret.build_duration().total_seconds()))
-    sys.stderr.write('Number of warnings: {}\n'.format(ret.errors_no()))
+    sys.stderr.write('Number of warnings: {}\n'.format(ret.warnings_no()))
     if ret.errors_no() > 0:
         sys.stderr.write('Number of errors: {}\n'.format(ret.errors_no()))
         error = list(ret.errors())[-1]
@@ -25,7 +25,11 @@ def main():
         sys.stderr.write('  Line Number: {}\n'.format(error.lineno))
         sys.stderr.write('  Column: {}\n'.format(error.column))
         sys.stderr.write('For full log, please open: {}\n'.format(ret.tmp_name()))
+        return retcode
 
+    for warn in ret.warnings():
+        print(warn)
+    sys.stderr.write('For full log, please open: {}\n'.format(ret.tmp_name()))
 
     return retcode
 

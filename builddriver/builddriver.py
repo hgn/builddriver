@@ -19,8 +19,13 @@ from typing import Optional
 LOG_PREFIX = 'build-'
 LOG_SUFFIX = '.log'
 
-class BuildDriverError(Exception): pass
-class ArgumentBuildDriverError(BuildDriverError): pass
+
+class BuildDriverError(Exception):
+    pass
+
+
+class ArgumentBuildDriverError(BuildDriverError):
+    pass
 
 
 @dataclass
@@ -36,10 +41,10 @@ class WarningErrorEntry:
     column: int = None
 
 
-
 class ExecutionHandle:
 
     def __init__(self, returncode, tf, taillog_size, record_unmatched, build_duration):
+        # pylint: disable=too-many-arguments
         self._returncode = returncode
         self._tf = tf
         self._taillog_size = taillog_size
@@ -120,7 +125,7 @@ class ExecutionHandle:
         self._parse()
         return self._gccoutputparser.unmatched_no()
 
-    def unmatched(self) -> int:
+    def unmatched(self) -> List:
         """Returns lines where gcc/llvm warning/error matcher failed
 
         This normally includes makefile output and other program
@@ -211,6 +216,7 @@ def _transport_execution_handle(completed_process, tf, tail_log_size,
         build_duration)
     return r
 
+
 def _redirect_prepare_fds():
     tf = tempfile.NamedTemporaryFile(mode='wt', delete=False,
                                      suffix=LOG_SUFFIX, prefix=LOG_PREFIX)
@@ -228,14 +234,14 @@ def _cleanup_old_logs():
     for file_ in glob.glob(os.path.join(path, pattern)):
         try:
             os.remove(file_)
+            # pylint: disable=broad-except
         except Exception:
             # just ignore for now, leave the file
             pass
 
 
-def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
-            taillog_size: int = 256, record_unmatched: bool = False,
-            precleanup: bool = True,
+def execute(command: str, shell: bool = True, taillog_size: int = 256,
+            record_unmatched: bool = False, precleanup: bool = True,
             cwd: Optional[str] = None, env: Optional[Dict[str, str]] = None):
     """Execute an given command, mainly gnu make, cmake or gcc direclty.
 
@@ -251,19 +257,17 @@ def execute(command: str, shell: bool = True, redirect_into_tmp: bool = True,
     Returns:
         True if successful, False otherwise.
     """
+    # pylint: disable=too-many-arguments
     build_time_start = datetime.datetime.now()
     if precleanup:
         _cleanup_old_logs()
     if not shell:
         # raw syscall, required command array
         command = command.split()
-    stderr_fd = sys.stderr
-    stdout_fd = sys.stdout
-    if redirect_into_tmp:
-        tf = _redirect_prepare_fds()
-        stderr_fd = tf.file
-        stdout_fd = tf.file
-    completed = subprocess.run(command, cwd=cwd, env=env, shell=shell,
+    tf = _redirect_prepare_fds()
+    stderr_fd = tf.file
+    stdout_fd = tf.file
+    completed = subprocess.run(command, cwd=cwd, env=env, shell=shell, check=False,
                                stderr=stderr_fd, stdout=stdout_fd)
     build_duration = datetime.datetime.now() - build_time_start
     return _transport_execution_handle(completed, tf, taillog_size,
@@ -274,13 +278,14 @@ RE_GCC_WITH_COLUMN = re.compile('^(.*):(\\d+):(\\d+):.*?(warning|error):(.*)$')
 RE_GCC_WITHOUT_COLUMN = re.compile('^(.*):(\\d+):.*?(warning|error):(.*)$')
 
 # (.text+0x20): undefined reference to `main'
-RE_LD_GENERIC = re.compile('^.*:\s+(?:undefined reference to|could not read symbols).+$')
+RE_LD_GENERIC = re.compile('^.*:\\s+(?:undefined reference to|could not read symbols).+$')
 # /home/me/dev/temp/foo.cpp:7: undefined reference to `clock_gettime'
-RE_LD_WITH_FILE_LINE_NO = re.compile('^(.*):(\d+):\s+((?:undefined reference to|could not read symbols).+)$')
+RE_LD_WITH_FILE_LINE_NO = re.compile(
+    '^(.*):(\\d+):\\s+((?:undefined reference to|could not read symbols).+)$')
 # foo.cpp:(.text+0x15): undefined reference to `clock_gettime'
-RE_LD_WITH_FILE = re.compile('^(.*):.+:\s+((?:undefined reference to|could not read symbols).+)$')
+RE_LD_WITH_FILE = re.compile('^(.*):.+:\\s+((?:undefined reference to|could not read symbols).+)$')
 # (.text+0x20): undefined reference to `main'
-RE_LD_WITHOUT_FILE = re.compile('^(.*):\s+((?:undefined reference to|could not read symbols).+)$')
+RE_LD_WITHOUT_FILE = re.compile('^(.*):\\s+((?:undefined reference to|could not read symbols).+)$')
 
 
 class GccOutputParser:
@@ -394,13 +399,15 @@ class GccOutputParser:
 
     def _process_new_entry(self, entry):
         if entry.severity == 'warning':
-            self._db_warnings.append(entry)
+            if not entry in self._db_warnings:
+                self._db_warnings.append(entry)
+                self._account_severity(entry)
         if entry.severity == 'error':
             self._db_errors.append(entry)
-        self._account_severity(entry)
-        #sys.stderr.write('\n')
-        #sys.stderr.write(str(entry))
-        #sys.stderr.write('\n')
+            self._account_severity(entry)
+        # sys.stderr.write('\n')
+        # sys.stderr.write(str(entry))
+        # sys.stderr.write('\n')
 
     def _process_gcc_with_column(self, regex_match):
         file_ = regex_match.group(1).strip()
@@ -457,7 +464,6 @@ class GccOutputParser:
         if not self._unmatched.enabled:
             return
         self._unmatched.db.append(line)
-
 
 
 if __name__ == "__main__":
